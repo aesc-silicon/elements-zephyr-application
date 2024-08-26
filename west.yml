@@ -5,18 +5,28 @@ manifest:
   self:
     west-commands: scripts/west-commands.yml
 
+  defaults:
+    remote: aesc-silicon
+    revision: main
+
   remotes:
     - name: zephyrproject-rtos
       url-base: https://github.com/zephyrproject-rtos
+    - name: aesc-silicon
+      url-base: https://github.com/aesc-silicon
+    - name: spinalhdl
+      url-base: https://github.com/spinalhdl
 
   projects:
-    - name: zephyr
-      remote: zephyrproject-rtos
-      revision: v3.7.0
-      import:
-        # By using name-allowlist we can clone only the modules that are
-        # strictly needed by the application.
-        name-allowlist:
-          - cmsis      # required by the ARM port
-          - hal_nordic # required by the custom_plank board (Nordic based)
-          - hal_stm32  # required by the nucleo_f302r8 board (STM32 based)
+    - name: elements-zephyr
+      revision: v3.7.0-aesc
+    - name: elements-zibal
+      path: modules/elements/zibal
+    - name: elements-nafarr
+      path: modules/elements/nafarr
+    - name: elements-vexriscv
+      path: modules/elements/vexriscv
+    - name: SpinalCrypto
+      revision: master
+      path: modules/elements/SpinalCrypto
+      remote: spinalhdl
