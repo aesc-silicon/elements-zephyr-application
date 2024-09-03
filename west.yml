@@ -20,6 +20,8 @@ manifest:
   projects:
     - name: elements-zephyr
       revision: v3.7.0-aesc
+      import:
+        path-allowlist: modules/elements/*
     - name: elements-zibal
       path: modules/elements/zibal
     - name: elements-nafarr
