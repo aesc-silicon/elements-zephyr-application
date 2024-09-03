@@ -1,0 +1,10 @@
+identifier: ecpix5/helium2
+name: ECPIX-5 Board / Elements Helium2
+type: mcu
+arch: riscv32
+toolchain:
+  - zephyr
+ram: 128
+supported:
+  - gpio
+  - uart

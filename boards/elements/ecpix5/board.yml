@@ -1,0 +1,6 @@
+board:
+  name: ecpix5
+  vendor: elements
+  socs:
+  - name: helium1
+  - name: helium2
