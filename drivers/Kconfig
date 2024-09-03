@@ -3,4 +3,5 @@
 
 menu "Drivers"
 rsource "gpio/Kconfig"
+rsource "pwm/Kconfig"
 endmenu
