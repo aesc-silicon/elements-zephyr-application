@@ -1,0 +1,20 @@
+# Copyright (c) 2024 aesc silicon
+# SPDX-License-Identifier: Apache-2.0
+
+
+menuconfig GPIO_ELEMENTS
+	bool "Elements GPIO driver"
+	default y
+	depends on DT_HAS_ELEMENTS_GPIO_ENABLED
+	help
+	  Enable driver for the Elements GPIO controller.
+
+	  Says n if not sure.
+
+if GPIO_ELEMENTS
+
+config GPIO_ELEMENTS_INTERRUPT
+	bool "Enable interrupt support"
+	default y
+
+endif # GPIO_ELEMENTS
