@@ -1,0 +1,13 @@
+# Copyright (c) 2024 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+
+if SERIAL
+
+module = SERIAL
+module-str = serial
+source "subsys/logging/Kconfig.template.log_config"
+
+rsource "Kconfig.elements"
+
+endif # SERIAL
