@@ -33,6 +33,7 @@ struct pwm_elements_channel_regs {
 
 struct pwm_elements_regs {
 	uint32_t config;
+	uint32_t permissions;
 	uint32_t clock_div;
 	struct pwm_elements_channel_regs channels[];
 };
