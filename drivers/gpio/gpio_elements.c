@@ -21,7 +21,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/sys/sys_io.h>
 
-#include <elements/drivers/ip_identification.h>
+#include <lib/ip_identification.h>
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(DT_DRV_COMPAT, CONFIG_GPIO_LOG_LEVEL);
@@ -252,13 +252,11 @@ static int gpio_elements_init(const struct device *dev)
 	volatile uintptr_t *base_addr = (volatile uintptr_t *)DEV_GPIO(dev);
 	volatile struct gpio_elements_regs *gpio;
 	volatile struct gpio_elements_bank_regs *bank;
+	char version[7];
 
 	DEVICE_MMIO_NAMED_MAP(dev, regs, K_MEM_CACHE_NONE);
-	LOG_INF("IP core version: %i.%i.%i.",
-		ip_id_get_major_version(base_addr),
-		ip_id_get_minor_version(base_addr),
-		ip_id_get_patchlevel(base_addr)
-	);
+	ip_id_get_version(base_addr, version);
+	LOG_INF("IP core version: %s", version);
 	cfg->regs.addr = ip_id_relocate_driver(base_addr);
 	LOG_INF("Relocate driver to address 0x%lx.", cfg->regs.addr);
 
@@ -268,7 +266,7 @@ static int gpio_elements_init(const struct device *dev)
 	cfg->available_banks = (gpio->banks_pins >> 16) & 0xFFFF;
 	cfg->available_pins = gpio->banks_pins & 0xFFFF;
 
-	LOG_INF("Controller has a total of %i pins.", cfg->available_pins);
+	LOG_INF("Controller has a total of %i pin(s).", cfg->available_pins);
 	LOG_INF("Controller has %i bank(s).", cfg->available_banks);
 
 	if (cfg->available_banks > 1)

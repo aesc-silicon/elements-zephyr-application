@@ -12,7 +12,7 @@
 #include <zephyr/arch/cpu.h>
 #include <zephyr/drivers/pwm.h>
 
-#include <elements/drivers/ip_identification.h>
+#include <lib/ip_identification.h>
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(DT_DRV_COMPAT, CONFIG_PWM_LOG_LEVEL);
@@ -33,6 +33,7 @@ struct pwm_elements_channel_regs {
 
 struct pwm_elements_regs {
 	uint32_t config;
+	uint32_t permissions;
 	uint32_t clock_div;
 	struct pwm_elements_channel_regs channels[];
 };
@@ -98,13 +99,11 @@ static int pwm_elements_init(const struct device *dev)
 	volatile uintptr_t *base_addr = (volatile uintptr_t *)DEV_PWM(dev);
 	volatile struct pwm_elements_regs *pwm;
 	uint32_t clock_divider;
+	char version[7];
 
 	DEVICE_MMIO_NAMED_MAP(dev, regs, K_MEM_CACHE_NONE);
-	LOG_INF("IP core version: %i.%i.%i.",
-		ip_id_get_major_version(base_addr),
-		ip_id_get_minor_version(base_addr),
-		ip_id_get_patchlevel(base_addr)
-	);
+	ip_id_get_version(base_addr, version);
+	LOG_INF("IP core version: %s", version);
 	cfg->regs.addr = ip_id_relocate_driver(base_addr);
 	LOG_INF("Relocate driver to address 0x%lx.", cfg->regs.addr);
 
@@ -113,6 +112,7 @@ static int pwm_elements_init(const struct device *dev)
 	cfg->channels = pwm->config & 0xFF;
 
 	LOG_INF("Controller has %i channels.", cfg->channels);
+	LOG_INF("Clock Divider is writable: %i.", pwm->permissions & 0x1);
 
 	clock_divider = (cfg->clock_frequency / CYCLES_PER_SECOND) - 1;
 	LOG_INF("Set clock divider to %i", clock_divider);

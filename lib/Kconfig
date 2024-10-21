@@ -2,4 +2,11 @@
 # SPDX-License-Identifier: Apache-2.0
 
 menu "Custom libraries"
+
+config NAFARR_IP_IDENTIFICATION
+  bool "Nafarr IP Identification"
+  help
+    Enable Nafarr's IP Identification library to detect IPs
+    and relocate driver addresses.
+
 endmenu
