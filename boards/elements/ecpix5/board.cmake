@@ -10,7 +10,5 @@ board_runner_args(openocd --gdb-init "monitor reset halt")
 board_runner_args(openocd --gdb-init "load")
 board_runner_args(openocd --config "tcl/interface/jlink.cfg")
 board_runner_args(openocd --config "${BOARD_DIR}/support/helium.cfg")
-board_runner_args(openocd --openocd "${ZEPHYR_BASE}/../openocd/src/openocd")
-board_runner_args(openocd --openocd-search "${ZEPHYR_BASE}/../openocd")
 
 include(${ZEPHYR_BASE}/boards/common/openocd.board.cmake)

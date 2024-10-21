@@ -29,6 +29,24 @@
 		};
 	};
 
+	pwm-leds {
+		compatible = "pwm-leds";
+		pwm_red: PWM_RED {
+			pwms = <&pwmACtrl 0 PWM_MSEC(10) PWM_POLARITY_INVERTED>;
+			label = "Red PWM LED";
+		};
+
+		pwm_green: PWM_GREEN {
+			pwms = <&pwmACtrl 1 PWM_MSEC(10) PWM_POLARITY_INVERTED>;
+			label = "Green PWM LED";
+		};
+
+		pwm_blue: PWM_BLUE {
+			pwms = <&pwmACtrl 2 PWM_MSEC(10) PWM_POLARITY_INVERTED>;
+			label = "Blue PWM LED";
+		};
+	};
+
 	keys {
 		compatible = "gpio-keys";
 		sw0: SW0 {
@@ -39,5 +57,9 @@
 };
 
 &uartStdCtrl {
+	clock-frequency = <100000000>;
+};
+
+&pwmACtrl {
 	clock-frequency = <100000000>;
 };

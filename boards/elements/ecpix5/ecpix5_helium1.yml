@@ -8,3 +8,4 @@ ram: 128
 supported:
   - gpio
   - uart
+  - pwm
