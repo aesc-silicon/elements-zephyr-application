@@ -46,13 +46,13 @@
 		compatible = "elements,elements-soc", "simple-bus";
 		ranges;
 
-		plic: interrupt-controller@f00f0000 {
+		plic: interrupt-controller@f0800000 {
 			compatible = "sifive,plic-1.0.0";
 			#address-cells = <0>;
 			#interrupt-cells = <2>;
 			interrupt-controller;
 			interrupts-extended = <&cpu0_intc 0>;
-			reg = <0xf00f0000 0x04000000>;
+			reg = <0xf0800000 0x00400000>;
 			riscv,max-priority = <7>;
 			riscv,ndev = <0>;
 		};
