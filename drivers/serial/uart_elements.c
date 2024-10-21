@@ -10,6 +10,8 @@
 #include <zephyr/arch/cpu.h>
 #include <zephyr/drivers/uart.h>
 
+#include <lib/ip_identification.h>
+
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(uart_elements, CONFIG_UART_LOG_LEVEL);
 
@@ -21,6 +23,7 @@ typedef void (*elements_cfg_func_t)(void);
 #endif
 
 struct uart_elements_data {
+	DEVICE_MMIO_NAMED_RAM(regs);
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	uart_irq_callback_user_data_t callback;
 	void *cb_data;
@@ -28,7 +31,7 @@ struct uart_elements_data {
 };
 
 struct uart_elements_config {
-	uint32_t regs;
+	DEVICE_MMIO_NAMED_ROM(regs);
 	uint32_t sys_clk_freq;
 	uint32_t current_speed;
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
@@ -38,18 +41,22 @@ struct uart_elements_config {
 };
 
 struct uart_elements_regs {
-	unsigned int read_write;
-	unsigned int status;
-	unsigned int clock_div;
-	unsigned int frame_cfg;
-	unsigned int ip;
-	unsigned int ie;
+	uint32_t config;
+	uint32_t sampling;
+	uint32_t fifo_depth;
+	uint32_t permissions;
+	uint32_t read_write;
+	uint32_t status;
+	uint32_t clock_div;
+	uint32_t frame_cfg;
+	uint32_t ip;
+	uint32_t ie;
 };
 
-#define DEV_UART_CFG(dev)						     \
+#define DEV_CFG(dev)							     \
 	((struct uart_elements_config *)(dev)->config)
 #define DEV_UART(dev)							     \
-	((struct uart_elements_regs *)(DEV_UART_CFG(dev))->regs)
+	((struct uart_elements_regs *)DEVICE_MMIO_NAMED_GET(dev, regs))
 #define DEV_UART_DATA(dev)						     \
 	((struct uart_elements_data *)(dev)->data)
 
@@ -120,7 +127,7 @@ static int uart_elements_fifo_read(const struct device *dev,
 static void uart_elements_irq_tx_enable(const struct device *dev)
 {
 	volatile struct uart_elements_regs *uart = DEV_UART(dev);
-	volatile struct uart_elements_config *cfg = DEV_UART_CFG(dev);
+	volatile struct uart_elements_config *cfg = DEV_CFG(dev);
 
 	uart->ip |= DEV_UART_IRQ_TX_EN;
 	uart->ie |= DEV_UART_IRQ_TX_EN;
@@ -130,7 +137,7 @@ static void uart_elements_irq_tx_enable(const struct device *dev)
 static void uart_elements_irq_tx_disable(const struct device *dev)
 {
 	volatile struct uart_elements_regs *uart = DEV_UART(dev);
-	volatile struct uart_elements_config *cfg = DEV_UART_CFG(dev);
+	volatile struct uart_elements_config *cfg = DEV_CFG(dev);
 
 	uart->ie &= ~DEV_UART_IRQ_TX_EN;
 	if (!uart->ie)
@@ -158,7 +165,7 @@ static int uart_elements_irq_tx_complete(const struct device *dev)
 static void uart_elements_irq_rx_enable(const struct device *dev)
 {
 	volatile struct uart_elements_regs *uart = DEV_UART(dev);
-	volatile struct uart_elements_config *cfg = DEV_UART_CFG(dev);
+	volatile struct uart_elements_config *cfg = DEV_CFG(dev);
 
 	uart->ip |= DEV_UART_IRQ_RX_EN;
 	uart->ie |= DEV_UART_IRQ_RX_EN;
@@ -168,7 +175,7 @@ static void uart_elements_irq_rx_enable(const struct device *dev)
 static void uart_elements_irq_rx_disable(const struct device *dev)
 {
 	volatile struct uart_elements_regs *uart = DEV_UART(dev);
-	volatile struct uart_elements_config *cfg = DEV_UART_CFG(dev);
+	volatile struct uart_elements_config *cfg = DEV_CFG(dev);
 
 	uart->ie &= ~DEV_UART_IRQ_RX_EN;
 	if (!uart->ie)
@@ -202,11 +209,10 @@ static int uart_elements_irq_is_pending(const struct device *dev)
 
 static int uart_elements_irq_update(const struct device *dev)
 {
-/*
 	volatile struct uart_elements_regs *uart = DEV_UART(dev);
 
 	uart->ip = DEV_UART_IRQ_TX_EN | DEV_UART_IRQ_RX_EN;
-*/
+
 	return 1;
 }
 
@@ -233,8 +239,23 @@ static void uart_elements_irq_handler(const void *arg)
 
 static int uart_elements_init(const struct device *dev)
 {
-	volatile struct uart_elements_config *cfg = DEV_UART_CFG(dev);
-	volatile struct uart_elements_regs *uart = DEV_UART(dev);
+	volatile struct uart_elements_config *cfg = DEV_CFG(dev);
+	volatile uintptr_t *base_addr = (volatile uintptr_t *)DEV_UART(dev);
+	volatile struct uart_elements_regs *uart;
+	char version[7];
+
+	DEVICE_MMIO_NAMED_MAP(dev, regs, K_MEM_CACHE_NONE);
+	ip_id_get_version(base_addr, version);
+	LOG_INF("IP core version: %s", version);
+	cfg->regs.addr = ip_id_relocate_driver(base_addr);
+	LOG_INF("Relocate driver to address 0x%lx.", cfg->regs.addr);
+
+	uart = DEV_UART(dev);
+
+	LOG_INF("Transmit FIFO depth: %i", uart->fifo_depth >> 8 & 0xFF);
+	LOG_INF("Receive FIFO depth: %i", uart->fifo_depth & 0xFF);
+	LOG_INF("Data frame is writable: %i.", uart->permissions >> 1 & 0x1);
+	LOG_INF("Clock Divider is writable: %i.", uart->permissions & 0x1);
 
 	uart->clock_div = cfg->sys_clk_freq / cfg->current_speed / 8;
 	uart->frame_cfg = 7;
@@ -276,7 +297,8 @@ static const struct uart_driver_api uart_elements_driver_api = {
 	static struct uart_elements_data uart_elements_dev_data_##no;	     \
 	static void uart_elements_irq_cfg_func_##no(void);		     \
 	static struct uart_elements_config uart_elements_dev_cfg_##no = {    \
-		.regs = DT_REG_ADDR(DT_INST(no, elements_uart)),	     \
+		DEVICE_MMIO_NAMED_ROM_INIT(regs,			     \
+					   DT_INST(no, elements_uart)),	     \
 		.sys_clk_freq =						     \
 			DT_PROP(DT_INST(no, elements_uart), clock_frequency),\
 		.current_speed =					     \
@@ -304,7 +326,8 @@ static const struct uart_driver_api uart_elements_driver_api = {
 #define ELEMENTS_UART_INIT(no)						     \
 	static struct uart_elements_data uart_elements_dev_data_##no;	     \
 	static struct uart_elements_config uart_elements_dev_cfg_##no = {    \
-		.regs = DT_REG_ADDR(DT_INST(no, elements_uart)),	     \
+		DEVICE_MMIO_NAMED_ROM_INIT(regs,			     \
+					   DT_INST(no, elements_uart)),	     \
 		.sys_clk_freq =						     \
 			DT_PROP(DT_INST(no, elements_uart), clock_frequency),\
 		.current_speed =					     \
