@@ -6,6 +6,7 @@
 
 #include <elements/helium.dtsi>
 #include <zephyr/dt-bindings/i2c/i2c.h>
+#include <zephyr/dt-bindings/pwm/pwm.h>
 
 / {
 	#address-cells = <1>;
@@ -34,6 +35,13 @@
 			interrupts = <2 1>;
 			gpio-controller;
 			#gpio-cells = <2>;
+		};
+
+		pwmACtrl: pwmACtrl@f0002000 {
+			compatible = "elements,pwm";
+			reg = <0xf0002000 0x1000>;
+			status = "okay";
+			#pwm-cells = <3>;
 		};
 	};
 };
